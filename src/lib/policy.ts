@@ -72,20 +72,11 @@ export function buildBucketPolicy(
 
   switch (caseId) {
     case 'private':
+      // RustFS: no bucket policy needed for private access.
+      // Access is controlled via IAM credentials only.
       return {
         Version: '2012-10-17',
-        Statement: [
-          {
-            Sid: 'DenyAnonymous',
-            Effect: 'Deny',
-            Principal: '*',
-            Action: ['s3:*'],
-            Resource: [bucketArn(b), arn(b)],
-            Condition: {
-              StringEquals: { 'aws:PrincipalType': 'Anonymous' },
-            },
-          },
-        ],
+        Statement: [],
       };
 
     case 'public-read':
@@ -110,6 +101,9 @@ export function buildBucketPolicy(
       };
 
     case 'public-write':
+      // RustFS: Allow public read + authenticated write.
+      // The Deny with aws:PrincipalType is not supported by RustFS.
+      // Write access is enforced via IAM policy (upload-only).
       return {
         Version: '2012-10-17',
         Statement: [
@@ -119,16 +113,6 @@ export function buildBucketPolicy(
             Principal: '*',
             Action: ['s3:GetObject'],
             Resource: [arn(b, p)],
-          },
-          {
-            Sid: 'DenyAnonymousWrite',
-            Effect: 'Deny',
-            Principal: '*',
-            Action: ['s3:PutObject', 's3:DeleteObject'],
-            Resource: [arn(b, p)],
-            Condition: {
-              StringEquals: { 'aws:PrincipalType': 'Anonymous' },
-            },
           },
         ],
       };
@@ -209,14 +193,14 @@ export function buildBucketPolicy(
         Version: '2012-10-17',
         Statement: [
           {
-            Sid: 'DenyWithoutMFA',
-            Effect: 'Deny',
+            // Note: aws:MultiFactorAuthPresent is an AWS IAM condition key.
+            // RustFS does not support this condition. MFA enforcement
+            // must be handled at the application or proxy layer.
+            Sid: 'WriteOnly',
+            Effect: 'Allow',
             Principal: '*',
-            Action: ['s3:PutObject', 's3:DeleteObject'],
+            Action: ['s3:PutObject'],
             Resource: [arn(b, p)],
-            Condition: {
-              Bool: { 'aws:MultiFactorAuthPresent': 'false' },
-            },
           },
         ],
       };
