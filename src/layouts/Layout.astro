@@ -1,4 +1,6 @@
 ---
+import '../styles/global.css';
+
 interface Props {
   title?: string;
 }
@@ -7,7 +9,7 @@ const { title = 'S3 / RustFS Policy Generator' } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="fr">
+<html lang="fr" class="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -15,30 +17,80 @@ const { title = 'S3 / RustFS Policy Generator' } = Astro.props;
     <link rel="icon" href="/favicon.ico" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#38bdf8" />
+    <meta name="description" content="Générateur de policies S3/RustFS avec export Terraform, CloudFormation et guardrails de sécurité" />
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js');
+        });
+      }
+    </script>
+
+    <style is:global>
+      :root {
+        --radius: 0.625rem;
+        --color-background: oklch(1 0 0);
+        --color-foreground: oklch(0.145 0.017 285.823);
+        --color-card: oklch(1 0 0);
+        --color-card-foreground: oklch(0.145 0.017 285.823);
+        --color-popover: oklch(1 0 0);
+        --color-popover-foreground: oklch(0.145 0.017 285.823);
+        --color-primary: oklch(0.205 0.042 265.755);
+        --color-primary-foreground: oklch(0.985 0.002 247.839);
+        --color-secondary: oklch(0.97 0.004 264.542);
+        --color-secondary-foreground: oklch(0.205 0.042 265.755);
+        --color-muted: oklch(0.97 0.004 264.542);
+        --color-muted-foreground: oklch(0.556 0.019 270.879);
+        --color-accent: oklch(0.97 0.004 264.542);
+        --color-accent-foreground: oklch(0.205 0.042 265.755);
+        --color-destructive: oklch(0.577 0.245 27.325);
+        --color-destructive-foreground: oklch(0.577 0.245 27.325);
+        --color-border: oklch(0.922 0.007 264.542);
+        --color-input: oklch(0.922 0.007 264.542);
+        --color-ring: oklch(0.708 0.165 254.624);
+        --color-chart-1: oklch(0.646 0.222 41.116);
+        --color-chart-2: oklch(0.6 0.118 184.714);
+        --color-chart-3: oklch(0.398 0.07 227.392);
+        --color-chart-4: oklch(0.828 0.189 84.429);
+        --color-chart-5: oklch(0.769 0.188 70.08);
+        --color-sky-500: oklch(0.696 0.17 254.624);
+        --color-emerald-500: oklch(0.696 0.17 162.48);
+      }
+
+      .dark {
+        --color-background: oklch(0.145 0.017 285.823);
+        --color-foreground: oklch(0.985 0.002 247.839);
+        --color-card: oklch(0.145 0.017 285.823);
+        --color-card-foreground: oklch(0.985 0.002 247.839);
+        --color-popover: oklch(0.145 0.017 285.823);
+        --color-popover-foreground: oklch(0.985 0.002 247.839);
+        --color-primary: oklch(0.696 0.17 254.624);
+        --color-primary-foreground: oklch(0.145 0.017 285.823);
+        --color-secondary: oklch(0.269 0.006 264.542);
+        --color-secondary-foreground: oklch(0.985 0.002 247.839);
+        --color-muted: oklch(0.269 0.006 264.542);
+        --color-muted-foreground: oklch(0.708 0.019 261.362);
+        --color-accent: oklch(0.269 0.006 264.542);
+        --color-accent-foreground: oklch(0.985 0.002 247.839);
+        --color-destructive: oklch(0.396 0.141 25.723);
+        --color-destructive-foreground: oklch(0.637 0.237 25.331);
+        --color-border: oklch(0.269 0.006 264.542);
+        --color-input: oklch(0.269 0.006 264.542);
+        --color-ring: oklch(0.439 0.105 264.364);
+        --color-chart-1: oklch(0.488 0.243 264.376);
+        --color-chart-2: oklch(0.696 0.17 162.48);
+        --color-chart-3: oklch(0.769 0.188 70.08);
+        --color-chart-4: oklch(0.627 0.265 303.9);
+        --color-chart-5: oklch(0.645 0.246 16.439);
+      }
+    </style>
   </head>
-  <body>
+  <body class="min-h-screen bg-background text-foreground antialiased">
     <slot />
   </body>
 </html>
-
-<style is:global>
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-  }
-
-  html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    min-height: 100vh;
-    font-family: -apple-system, system-ui, 'Segoe UI', sans-serif;
-    background: #0f172a;
-    color: #e2e8f0;
-  }
-
-  h1, h2, h3, h4 {
-    margin: 0;
-  }
-</style>

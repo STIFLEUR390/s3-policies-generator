@@ -4,7 +4,7 @@ import type { HTMLAttributes } from "vue"
 import type { ButtonVariants } from "../button"
 import Button from "../button/Button.vue"
 
-interface Props extends PrimitiveProps {
+interface Props extends /* @vue-ignore */ PrimitiveProps {
   class?: HTMLAttributes["class"]
   variant?: ButtonVariants["variant"]
   size?: ButtonVariants["size"]

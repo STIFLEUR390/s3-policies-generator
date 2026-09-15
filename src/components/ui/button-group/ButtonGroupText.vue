@@ -5,7 +5,7 @@ import type { ButtonGroupVariants } from "."
 import { Primitive } from "reka-ui"
 import { cn } from "@/lib/utils"
 
-interface Props extends PrimitiveProps {
+interface Props extends /* @vue-ignore */ PrimitiveProps {
   class?: HTMLAttributes["class"]
   orientation?: ButtonGroupVariants["orientation"]
 }

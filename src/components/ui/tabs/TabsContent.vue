@@ -1,21 +1,26 @@
 <script setup lang="ts">
-import type { TabsContentProps } from "reka-ui"
-import type { HTMLAttributes } from "vue"
-import { reactiveOmit } from "@vueuse/core"
-import { TabsContent } from "reka-ui"
-import { cn } from "@/lib/utils"
+import { inject } from 'vue'
+import { cn } from '@/lib/utils'
 
-const props = defineProps<TabsContentProps & { class?: HTMLAttributes["class"] }>()
+const props = defineProps<{
+  value: string
+  class?: string
+}>()
 
-const delegatedProps = reactiveOmit(props, "class")
+const activeTab = inject<import('vue').Ref<string>>('tabs-active')
+
+function isActive() {
+  return activeTab && activeTab.value === props.value
+}
 </script>
 
 <template>
-  <TabsContent
-    data-slot="tabs-content"
+  <div
+    v-if="isActive()"
+    role="tabpanel"
+    :data-state="isActive() ? 'active' : 'inactive'"
     :class="cn('flex-1 outline-none', props.class)"
-    v-bind="delegatedProps"
   >
     <slot />
-  </TabsContent>
+  </div>
 </template>

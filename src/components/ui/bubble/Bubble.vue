@@ -6,7 +6,7 @@ import { Primitive } from "reka-ui"
 import { cn } from "@/lib/utils"
 import { bubbleVariants } from "."
 
-interface Props extends PrimitiveProps {
+interface Props extends /* @vue-ignore */ PrimitiveProps {
   variant?: BubbleVariants["variant"]
   align?: "start" | "end"
   class?: HTMLAttributes["class"]

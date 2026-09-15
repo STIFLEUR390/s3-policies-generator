@@ -127,8 +127,9 @@ export async function testList(config: S3Config): Promise<TestResult> {
     const body = await res.text();
     const msg = body.match(/<Message>(.*?)<\/Message>/)?.[1] || res.statusText;
     return { ok: false, status: res.status, message: `ListBucket échoué — ${msg}`, details: body.slice(0, 500) };
-  } catch (e: any) {
-    return { ok: false, message: `Erreur réseau — ${e.message}` };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, message: `Erreur réseau — ${msg}` };
   }
 }
 
@@ -148,8 +149,9 @@ export async function testRead(config: S3Config, testKey: string): Promise<TestR
     const body = await res.text();
     const msg = body.match(/<Message>(.*?)<\/Message>/)?.[1] || res.statusText;
     return { ok: false, status: res.status, message: `GetObject échoué — ${msg}`, details: body.slice(0, 500) };
-  } catch (e: any) {
-    return { ok: false, message: `Erreur réseau — ${e.message}` };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, message: `Erreur réseau — ${msg}` };
   }
 }
 
@@ -171,8 +173,9 @@ export async function testWrite(
     const body = await res.text();
     const msg = body.match(/<Message>(.*?)<\/Message>/)?.[1] || res.statusText;
     return { ok: false, status: res.status, message: `PutObject échoué — ${msg}`, details: body.slice(0, 500) };
-  } catch (e: any) {
-    return { ok: false, message: `Erreur réseau — ${e.message}` };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, message: `Erreur réseau — ${msg}` };
   }
 }
 
@@ -184,8 +187,9 @@ export async function testPublicRead(publicUrl: string): Promise<TestResult> {
       return { ok: true, status: res.status, message: `Lecture publique OK — ${ct}`, url: publicUrl };
     }
     return { ok: false, status: res.status, message: `Lecture publique échouée — HTTP ${res.status}` };
-  } catch (e: any) {
-    return { ok: false, message: `Erreur réseau — ${e.message}` };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, message: `Erreur réseau — ${msg}` };
   }
 }
 
@@ -201,7 +205,8 @@ export async function testDelete(config: S3Config, key: string): Promise<TestRes
     const body = await res.text();
     const msg = body.match(/<Message>(.*?)<\/Message>/)?.[1] || res.statusText;
     return { ok: false, status: res.status, message: `DeleteObject échoué — ${msg}`, details: body.slice(0, 500) };
-  } catch (e: any) {
-    return { ok: false, message: `Erreur réseau — ${e.message}` };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, message: `Erreur réseau — ${msg}` };
   }
 }

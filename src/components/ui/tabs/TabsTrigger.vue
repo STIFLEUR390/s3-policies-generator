@@ -1,26 +1,45 @@
 <script setup lang="ts">
-import type { TabsTriggerProps } from "reka-ui"
-import type { HTMLAttributes } from "vue"
-import { reactiveOmit } from "@vueuse/core"
-import { TabsTrigger, useForwardProps } from "reka-ui"
-import { cn } from "@/lib/utils"
+import { inject, computed } from 'vue'
+import { cn } from '@/lib/utils'
 
-const props = defineProps<TabsTriggerProps & { class?: HTMLAttributes["class"] }>()
+const props = defineProps<{
+  value: string
+  class?: string
+  disabled?: boolean
+}>()
 
-const delegatedProps = reactiveOmit(props, "class")
+const activeTab = inject<import('vue').Ref<string>>('tabs-active')
+const updateTab = inject<(val: string) => void>('tabs-update')
 
-const forwardedProps = useForwardProps(delegatedProps)
+function isActive() {
+  return activeTab && activeTab.value === props.value
+}
+
+function activate() {
+  if (!props.disabled && updateTab) {
+    updateTab(props.value)
+  }
+}
+
+const triggerClass = computed(() => cn(
+  'inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-3 focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50',
+  isActive()
+    ? 'bg-background text-foreground shadow-sm border-input'
+    : 'text-muted-foreground hover:text-foreground',
+  props.class,
+))
 </script>
 
 <template>
-  <TabsTrigger
-    data-slot="tabs-trigger"
-    :class="cn(
-      `data-[state=active]:bg-background dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-3 focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4`,
-      props.class,
-    )"
-    v-bind="forwardedProps"
+  <button
+    role="tab"
+    type="button"
+    :aria-selected="isActive()"
+    :data-state="isActive() ? 'active' : 'inactive'"
+    :disabled="disabled"
+    :class="triggerClass"
+    @click="activate"
   >
     <slot />
-  </TabsTrigger>
+  </button>
 </template>

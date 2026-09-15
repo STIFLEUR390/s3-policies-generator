@@ -3,7 +3,7 @@ import type { PrimitiveProps } from "reka-ui"
 import type { HTMLAttributes } from "vue"
 import { cn } from "@/lib/utils"
 
-interface Props extends PrimitiveProps {
+interface Props extends /* @vue-ignore */ PrimitiveProps {
   class?: HTMLAttributes["class"]
 }
 const props = withDefaults(defineProps<Props>(), {
