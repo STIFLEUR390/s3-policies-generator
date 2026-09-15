@@ -1,161 +1,199 @@
 <template>
-  <div class="app">
-    <h1>🪣 RustFS Policy Generator</h1>
+  <div class="min-h-screen bg-background text-foreground">
+    <div class="max-w-7xl mx-auto p-6">
+      <h1 class="text-3xl font-bold text-primary mb-2">🪣 RustFS Policy Generator</h1>
+      <p class="text-muted-foreground text-sm mb-6">
+        Générez des policies S3/RustFS, exportez en Terraform/CloudFormation, et testez vos accès.
+      </p>
 
-    <!-- Case selector -->
-    <div class="case-selector">
-      <button
-        v-for="c in cases"
-        :key="c.id"
-        :class="{ active: currentCase === c.id }"
-        @click="selectCase(c.id)"
-      >
-        {{ c.label }}
-      </button>
-    </div>
-
-    <p class="case-desc">{{ currentCaseDef.description }}</p>
-
-    <div class="grid">
-      <!-- Left: Config -->
-      <div>
-        <fieldset>
-          <legend>Paramètres généraux</legend>
-          <label for="bucket">Nom du bucket</label>
-          <input id="bucket" v-model="bucket" />
-          <label for="prefix">Préfixe (chemin dans le bucket)</label>
-          <input id="prefix" v-model="prefix" />
-          <label for="endpoint">Endpoint RustFS</label>
-          <input id="endpoint" v-model="endpoint" />
-          <label for="region">Région</label>
-          <input id="region" v-model="region" />
-        </fieldset>
-
-        <fieldset v-if="needsCredentials">
-          <legend>Utilisateur IAM</legend>
-          <label for="accessKey">Access Key (nom utilisateur)</label>
-          <input id="accessKey" v-model="accessKey" />
-          <label for="secretKey">Secret Key</label>
-          <input id="secretKey" v-model="secretKey" type="password" />
-        </fieldset>
-
-        <!-- Advanced fields -->
-        <fieldset v-if="currentCase === 'cloudfront-oac'">
-          <legend>CloudFront</legend>
-          <label for="distId">Distribution ID</label>
-          <input id="distId" v-model="cloudfrontDistributionId" placeholder="E1ABCDEF123456" />
-        </fieldset>
-
-        <fieldset v-if="currentCase === 'cross-account'">
-          <legend>Compte cible</legend>
-          <label for="accountId">Account ID du compte distant</label>
-          <input id="accountId" v-model="crossAccountAccountId" placeholder="123456789012" />
-        </fieldset>
-
-        <fieldset v-if="currentCase === 'ip-restriction'">
-          <legend>Restriction IP</legend>
-          <label for="ipCidr">CIDR autorisé</label>
-          <input id="ipCidr" v-model="allowedIpCidr" placeholder="203.0.113.0/24" />
-        </fieldset>
-
-        <!-- Guardrails -->
-        <fieldset v-if="showGuardrails">
-          <legend>🛡️ Guardrails de sécurité</legend>
-          <p class="guardrail-hint">
-            Deny statements ajoutés à la bucket policy pour renforcer la sécurité.
-          </p>
-          <div v-for="g in availableGuardrails" :key="g.id" class="guardrail-item">
-            <label class="guardrail-label">
-              <input type="checkbox" :value="g.id" v-model="enabledGuardrails" />
-              <span>
-                <strong>{{ g.label }}</strong>
-                <small>{{ g.description }}</small>
-              </span>
-            </label>
-          </div>
-          <div v-if="currentCase === 'vpc-endpoint' || enabledGuardrails.includes('vpc-endpoint')" class="guardrail-extra">
-            <label for="vpcEp">VPC Endpoint ID</label>
-            <input id="vpcEp" v-model="vpcEndpointId" placeholder="vpce-xxxxxxxx" />
-          </div>
-          <div v-if="enabledGuardrails.includes('org-restriction')" class="guardrail-extra">
-            <label for="orgId">Organization ID</label>
-            <input id="orgId" v-model="organizationId" placeholder="o-xxxxxxxxxx" />
-          </div>
-        </fieldset>
+      <!-- Case selector -->
+      <div class="flex flex-wrap gap-2 mb-3">
+        <button
+          v-for="c in cases"
+          :key="c.id"
+          :class="[
+            'px-3 py-1.5 rounded-md text-sm font-medium border transition-colors cursor-pointer',
+            currentCase === c.id
+              ? 'bg-primary text-primary-foreground border-primary'
+              : 'bg-secondary text-secondary-foreground border-border hover:bg-accent',
+          ]"
+          @click="selectCase(c.id)"
+        >
+          {{ c.label }}
+        </button>
       </div>
+      <p class="text-muted-foreground text-xs mb-6">{{ currentCaseDef.description }}</p>
 
-      <!-- Right: Output -->
-      <div>
-        <fieldset>
-          <legend>Sortie</legend>
-
-          <!-- Format tabs -->
-          <div class="format-tabs">
-            <button
-              v-for="f in outputFormats"
-              :key="f.id"
-              :class="{ active: outputFormat === f.id }"
-              @click="outputFormat = f.id"
-            >
-              {{ f.label }}
-            </button>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Left: Config -->
+        <div class="space-y-4">
+          <!-- General params -->
+          <div class="rounded-xl border bg-card p-5">
+            <h2 class="font-semibold text-sm mb-4">Paramètres généraux</h2>
+            <div class="space-y-3">
+              <div>
+                <label for="bucket" class="text-xs font-medium text-muted-foreground">Nom du bucket</label>
+                <input id="bucket" v-model="bucket" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-mono" />
+              </div>
+              <div>
+                <label for="prefix" class="text-xs font-medium text-muted-foreground">Préfixe (chemin dans le bucket)</label>
+                <input id="prefix" v-model="prefix" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-mono" />
+              </div>
+              <div>
+                <label for="endpoint" class="text-xs font-medium text-muted-foreground">Endpoint RustFS</label>
+                <input id="endpoint" v-model="endpoint" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-mono" />
+              </div>
+              <div>
+                <label for="region" class="text-xs font-medium text-muted-foreground">Région</label>
+                <input id="region" v-model="region" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-mono" />
+              </div>
+            </div>
           </div>
 
-          <!-- Bucket Policy output -->
-          <div class="output-block">
-            <h3>
-              {{ outputFormat === 'json' ? 'Bucket Policy' : outputFormatLabel }}
-              <button class="copy-btn" @click="copy('bucket')">
-                {{ copied === 'bucket' ? 'Copié ✓' : 'Copier' }}
+          <!-- IAM credentials -->
+          <div v-if="needsCredentials" class="rounded-xl border bg-card p-5">
+            <h2 class="font-semibold text-sm mb-4">Utilisateur IAM</h2>
+            <div class="space-y-3">
+              <div>
+                <label for="accessKey" class="text-xs font-medium text-muted-foreground">Access Key (nom utilisateur)</label>
+                <input id="accessKey" v-model="accessKey" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-mono" />
+              </div>
+              <div>
+                <label for="secretKey" class="text-xs font-medium text-muted-foreground">Secret Key</label>
+                <input id="secretKey" v-model="secretKey" type="password" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-mono" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Advanced fields -->
+          <div v-if="currentCase === 'cloudfront-oac'" class="rounded-xl border bg-card p-5">
+            <h2 class="font-semibold text-sm mb-4">CloudFront</h2>
+            <div>
+              <label for="distId" class="text-xs font-medium text-muted-foreground">Distribution ID</label>
+              <input id="distId" v-model="cloudfrontDistributionId" placeholder="E1ABCDEF123456" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-mono" />
+            </div>
+          </div>
+
+          <div v-if="currentCase === 'cross-account'" class="rounded-xl border bg-card p-5">
+            <h2 class="font-semibold text-sm mb-4">Compte cible</h2>
+            <div>
+              <label for="accountId" class="text-xs font-medium text-muted-foreground">Account ID du compte distant</label>
+              <input id="accountId" v-model="crossAccountAccountId" placeholder="123456789012" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-mono" />
+            </div>
+          </div>
+
+          <div v-if="currentCase === 'ip-restriction'" class="rounded-xl border bg-card p-5">
+            <h2 class="font-semibold text-sm mb-4">Restriction IP</h2>
+            <div>
+              <label for="ipCidr" class="text-xs font-medium text-muted-foreground">CIDR autorisé</label>
+              <input id="ipCidr" v-model="allowedIpCidr" placeholder="203.0.113.0/24" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-mono" />
+            </div>
+          </div>
+
+          <!-- Guardrails -->
+          <div v-if="showGuardrails" class="rounded-xl border bg-card p-5">
+            <h2 class="font-semibold text-sm mb-1">🛡️ Guardrails de sécurité</h2>
+            <p class="text-muted-foreground text-xs mb-4">Deny statements ajoutés à la bucket policy pour renforcer la sécurité.</p>
+            <div class="space-y-3">
+              <label v-for="g in availableGuardrails" :key="g.id" class="flex items-start gap-2 cursor-pointer">
+                <input type="checkbox" :value="g.id" v-model="enabledGuardrails" class="mt-0.5 h-4 w-4 shrink-0 rounded border border-primary shadow accent-primary" />
+                <span class="text-sm">
+                  <strong class="block">{{ g.label }}</strong>
+                  <small class="text-muted-foreground text-xs">{{ g.description }}</small>
+                </span>
+              </label>
+            </div>
+            <div v-if="enabledGuardrails.includes('vpc-endpoint')" class="mt-3 pt-3 border-t border-border">
+              <label for="vpcEp" class="text-xs font-medium text-muted-foreground">VPC Endpoint ID</label>
+              <input id="vpcEp" v-model="vpcEndpointId" placeholder="vpce-xxxxxxxx" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-mono" />
+            </div>
+            <div v-if="enabledGuardrails.includes('org-restriction')" class="mt-3 pt-3 border-t border-border">
+              <label for="orgId" class="text-xs font-medium text-muted-foreground">Organization ID</label>
+              <input id="orgId" v-model="organizationId" placeholder="o-xxxxxxxxxx" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-mono" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Output -->
+        <div>
+          <div class="rounded-xl border bg-card p-5">
+            <h2 class="font-semibold text-sm mb-4">Sortie</h2>
+
+            <!-- Format tabs -->
+            <div class="flex gap-1 border-b border-border mb-4">
+              <button
+                v-for="f in outputFormats"
+                :key="f.id"
+                :class="[
+                  'px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors -mb-px cursor-pointer',
+                  outputFormat === f.id
+                    ? 'border border-b-0 border-border bg-background text-foreground'
+                    : 'text-muted-foreground hover:text-foreground',
+                ]"
+                @click="outputFormat = f.id"
+              >
+                {{ f.label }}
               </button>
-            </h3>
-            <pre>{{ bucketPolicyOutput }}</pre>
-          </div>
+            </div>
 
-          <!-- IAM Policy -->
-          <div v-if="iamPolicyJson" class="output-block">
-            <h3>
-              IAM Policy
-              <button class="copy-btn" @click="copy('iam')">
-                {{ copied === 'iam' ? 'Copié ✓' : 'Copier' }}
-              </button>
-            </h3>
-            <pre>{{ iamPolicyJson }}</pre>
-          </div>
+            <!-- Bucket Policy -->
+            <div class="mb-4">
+              <div class="flex items-center justify-between mb-1">
+                <h3 class="text-sm font-medium text-emerald-500">
+                  {{ outputFormat === 'json' ? 'Bucket Policy' : outputFormatLabel }}
+                </h3>
+                <button class="text-xs bg-secondary text-secondary-foreground px-2 py-0.5 rounded hover:bg-accent transition-colors cursor-pointer" @click="copy('bucket')">
+                  {{ copied === 'bucket' ? 'Copié ✓' : 'Copier' }}
+                </button>
+              </div>
+              <pre class="bg-background border border-border rounded-md p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap break-words">{{ bucketPolicyOutput }}</pre>
+            </div>
 
-          <!-- .env -->
-          <div class="output-block">
-            <h3>
-              .env
-              <button class="copy-btn" @click="copy('env')">
-                {{ copied === 'env' ? 'Copié ✓' : 'Copier' }}
-              </button>
-            </h3>
-            <pre>{{ envOutput }}</pre>
-          </div>
+            <!-- IAM Policy -->
+            <div v-if="iamPolicyJson" class="mb-4">
+              <div class="flex items-center justify-between mb-1">
+                <h3 class="text-sm font-medium text-emerald-500">IAM Policy</h3>
+                <button class="text-xs bg-secondary text-secondary-foreground px-2 py-0.5 rounded hover:bg-accent transition-colors cursor-pointer" @click="copy('iam')">
+                  {{ copied === 'iam' ? 'Copié ✓' : 'Copier' }}
+                </button>
+              </div>
+              <pre class="bg-background border border-border rounded-md p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap break-words">{{ iamPolicyJson }}</pre>
+            </div>
 
-          <!-- Admin Commands -->
-          <div class="output-block">
-            <h3>
-              Commandes RustFS Admin
-              <button class="copy-btn" @click="copy('cmds')">
-                {{ copied === 'cmds' ? 'Copié ✓' : 'Copier' }}
-              </button>
-            </h3>
-            <pre>{{ cmdsOutput }}</pre>
-          </div>
+            <!-- .env -->
+            <div class="mb-4">
+              <div class="flex items-center justify-between mb-1">
+                <h3 class="text-sm font-medium text-emerald-500">.env</h3>
+                <button class="text-xs bg-secondary text-secondary-foreground px-2 py-0.5 rounded hover:bg-accent transition-colors cursor-pointer" @click="copy('env')">
+                  {{ copied === 'env' ? 'Copié ✓' : 'Copier' }}
+                </button>
+              </div>
+              <pre class="bg-background border border-border rounded-md p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap break-words">{{ envOutput }}</pre>
+            </div>
 
-          <!-- Node.js Snippet -->
-          <div class="output-block">
-            <h3>
-              Node.js Snippet
-              <button class="copy-btn" @click="copy('node')">
-                {{ copied === 'node' ? 'Copié ✓' : 'Copier' }}
-              </button>
-            </h3>
-            <pre>{{ nodeOutput }}</pre>
+            <!-- Admin Commands -->
+            <div class="mb-4">
+              <div class="flex items-center justify-between mb-1">
+                <h3 class="text-sm font-medium text-emerald-500">Commandes RustFS Admin</h3>
+                <button class="text-xs bg-secondary text-secondary-foreground px-2 py-0.5 rounded hover:bg-accent transition-colors cursor-pointer" @click="copy('cmds')">
+                  {{ copied === 'cmds' ? 'Copié ✓' : 'Copier' }}
+                </button>
+              </div>
+              <pre class="bg-background border border-border rounded-md p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap break-words">{{ cmdsOutput }}</pre>
+            </div>
+
+            <!-- Node.js Snippet -->
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <h3 class="text-sm font-medium text-emerald-500">Node.js Snippet</h3>
+                <button class="text-xs bg-secondary text-secondary-foreground px-2 py-0.5 rounded hover:bg-accent transition-colors cursor-pointer" @click="copy('node')">
+                  {{ copied === 'node' ? 'Copié ✓' : 'Copier' }}
+                </button>
+              </div>
+              <pre class="bg-background border border-border rounded-md p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap break-words">{{ nodeOutput }}</pre>
+            </div>
           </div>
-        </fieldset>
+        </div>
       </div>
     </div>
   </div>
@@ -175,8 +213,6 @@ import {
 } from '../lib/policy';
 import { guardrails, applyGuardrails } from '../lib/guardrails';
 import { toTerraform, toCloudFormation, toCli } from '../lib/iac';
-
-// ── Cases ──────────────────────────────────────────────────────────────────
 
 const cases: CaseDef[] = [
   { id: 'private', label: 'Privé (auth)', category: 'preset', description: 'Accès complet via credentials IAM. Anonymous denied.' },
@@ -200,8 +236,6 @@ const prefixDefaults: Record<CaseId, string> = {
   'mfa-required': 'secure/',
 };
 
-// ── State ──────────────────────────────────────────────────────────────────
-
 const currentCase = ref<CaseId>('private');
 const outputFormat = ref<'json' | 'terraform' | 'cloudformation' | 'cli'>('json');
 const bucket = ref('my-bucket');
@@ -218,21 +252,10 @@ const organizationId = ref('');
 const enabledGuardrails = ref<string[]>([]);
 const copied = ref<string | null>(null);
 
-// ── Computed ───────────────────────────────────────────────────────────────
-
 const currentCaseDef = computed(() => cases.find((c) => c.id === currentCase.value)!);
-
-const needsCredentials = computed(() =>
-  !['public-read', 'cloudfront-oac'].includes(currentCase.value),
-);
-
-const showGuardrails = computed(() =>
-  !['cloudfront-oac'].includes(currentCase.value),
-);
-
-const availableGuardrails = computed(() =>
-  guardrails.filter((g) => !g.conflictsWith?.includes(currentCase.value)),
-);
+const needsCredentials = computed(() => !['public-read', 'cloudfront-oac'].includes(currentCase.value));
+const showGuardrails = computed(() => !['cloudfront-oac'].includes(currentCase.value));
+const availableGuardrails = computed(() => guardrails.filter((g) => !g.conflictsWith?.includes(currentCase.value)));
 
 const outputFormats = [
   { id: 'json' as const, label: 'JSON' },
@@ -241,9 +264,7 @@ const outputFormats = [
   { id: 'cli' as const, label: 'CLI' },
 ];
 
-const outputFormatLabel = computed(() =>
-  outputFormats.find((f) => f.id === outputFormat.value)?.label ?? 'JSON',
-);
+const outputFormatLabel = computed(() => outputFormats.find((f) => f.id === outputFormat.value)?.label ?? 'JSON');
 
 const config = computed<PolicyConfig>(() => ({
   bucket: bucket.value,
@@ -262,10 +283,7 @@ const config = computed<PolicyConfig>(() => ({
 const bucketPolicy = computed(() => {
   const base = buildBucketPolicy(currentCase.value, config.value);
   if (enabledGuardrails.value.length > 0) {
-    return {
-      ...base,
-      Statement: applyGuardrails(base.Statement, enabledGuardrails.value, config.value),
-    };
+    return { ...base, Statement: applyGuardrails(base.Statement, enabledGuardrails.value, config.value) };
   }
   return base;
 });
@@ -274,14 +292,10 @@ const bucketPolicyJson = computed(() => JSON.stringify(bucketPolicy.value, null,
 
 const bucketPolicyOutput = computed(() => {
   switch (outputFormat.value) {
-    case 'terraform':
-      return toTerraform(bucketPolicy.value, config.value);
-    case 'cloudformation':
-      return toCloudFormation(bucketPolicy.value, config.value);
-    case 'cli':
-      return toCli(bucketPolicy.value, config.value);
-    default:
-      return bucketPolicyJson.value;
+    case 'terraform': return toTerraform(bucketPolicy.value, config.value);
+    case 'cloudformation': return toCloudFormation(bucketPolicy.value, config.value);
+    case 'cli': return toCli(bucketPolicy.value, config.value);
+    default: return bucketPolicyJson.value;
   }
 });
 
@@ -293,8 +307,6 @@ const iamPolicyJson = computed(() => {
 const envOutput = computed(() => buildEnv(currentCase.value, config.value));
 const cmdsOutput = computed(() => buildCommands(currentCase.value, config.value));
 const nodeOutput = computed(() => buildNode(currentCase.value, config.value));
-
-// ── Actions ────────────────────────────────────────────────────────────────
 
 function selectCase(id: CaseId) {
   currentCase.value = id;
@@ -314,216 +326,3 @@ function copy(key: string) {
   setTimeout(() => (copied.value = null), 1500);
 }
 </script>
-
-<style scoped>
-.app {
-  padding: 24px;
-}
-
-h1 {
-  color: #38bdf8;
-  margin-bottom: 12px;
-}
-
-.case-desc {
-  color: #94a3b8;
-  font-size: 13px;
-  margin: 0 0 16px;
-}
-
-.case-selector {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
-}
-
-.case-selector button {
-  background: #1e293b;
-  color: #e2e8f0;
-  border: 1px solid #334155;
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.case-selector button.active {
-  background: #38bdf8;
-  color: #0f172a;
-  border-color: #38bdf8;
-}
-
-.case-selector button:hover:not(.active) {
-  background: #334155;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
-@media (max-width: 900px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-fieldset {
-  border: 1px solid #334155;
-  border-radius: 8px;
-  padding: 16px;
-  background: #1e293b;
-  margin-bottom: 16px;
-}
-
-legend {
-  color: #38bdf8;
-  padding: 0 8px;
-  font-weight: 600;
-}
-
-label {
-  display: block;
-  margin: 10px 0 4px;
-  font-size: 13px;
-  color: #94a3b8;
-}
-
-input[type='text'],
-input:not([type]) {
-  width: 100%;
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 1px solid #334155;
-  background: #0f172a;
-  color: #e2e8f0;
-  font-family: ui-monospace, monospace;
-  font-size: 13px;
-}
-
-input:focus {
-  outline: none;
-  border-color: #38bdf8;
-}
-
-/* ── Guardrails ────────────────────────────────────────────── */
-
-.guardrail-hint {
-  color: #64748b;
-  font-size: 12px;
-  margin: 0 0 8px;
-}
-
-.guardrail-item {
-  margin-bottom: 10px;
-}
-
-.guardrail-label {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  cursor: pointer;
-  font-size: 13px;
-  color: #e2e8f0;
-  margin: 0;
-}
-
-.guardrail-label input[type='checkbox'] {
-  margin-top: 3px;
-  accent-color: #38bdf8;
-}
-
-.guardrail-label strong {
-  display: block;
-  color: #e2e8f0;
-}
-
-.guardrail-label small {
-  display: block;
-  color: #64748b;
-  font-size: 11px;
-  margin-top: 2px;
-}
-
-.guardrail-extra {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid #334155;
-}
-
-/* ── Format tabs ───────────────────────────────────────────── */
-
-.format-tabs {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 12px;
-}
-
-.format-tabs button {
-  background: #0f172a;
-  color: #94a3b8;
-  border: 1px solid #334155;
-  padding: 5px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.format-tabs button.active {
-  background: #4ade80;
-  color: #0f172a;
-  border-color: #4ade80;
-}
-
-.format-tabs button:hover:not(.active) {
-  background: #1e293b;
-}
-
-/* ── Output ────────────────────────────────────────────────── */
-
-pre {
-  background: #0f172a;
-  border: 1px solid #334155;
-  border-radius: 6px;
-  padding: 12px;
-  overflow-x: auto;
-  font-size: 12px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-break: break-word;
-  margin: 0;
-}
-
-.output-block {
-  margin-bottom: 16px;
-}
-
-.output-block h3 {
-  color: #4ade80;
-  font-size: 13px;
-  margin: 12px 0 6px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.copy-btn {
-  background: #334155;
-  color: #e2e8f0;
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  border: none;
-}
-
-.copy-btn:hover {
-  background: #475569;
-}
-</style>
