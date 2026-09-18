@@ -72,8 +72,10 @@ export function buildBucketPolicy(
 
   switch (caseId) {
     case 'private':
-      // RustFS: no bucket policy needed for private access.
-      // Access is controlled via IAM credentials only.
+      // RustFS: bucket is private by default (no policy = no anonymous access).
+      // Explicit Deny for unauthenticated requests is not possible because
+      // aws:PrincipalType is an AWS IAM condition key not supported by RustFS.
+      // Access control relies entirely on IAM credentials.
       return {
         Version: '2012-10-17',
         Statement: [],
